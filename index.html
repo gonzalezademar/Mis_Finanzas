@@ -435,13 +435,10 @@
         </div>
       </div>
 
-      <!-- Info card -->
-      <div class="card" style="padding:16px 18px">
-        <div class="card-header" style="margin-bottom:8px"><h2>Sobre la sincronización</h2></div>
-        <p style="font-size:.82rem;color:#94a3b8;line-height:1.55">
-          Cuando sincronizas con otra persona, ambos dispositivos comparten todos los movimientos activos y la papelera. Los datos eliminados en cualquier dispositivo se eliminan en ambos automáticamente.
-        </p>
-      </div>
+      <!-- Onboarding / How it works Button -->
+      <button class="btn-primary" style="margin-bottom:16px;background:linear-gradient(135deg,rgba(255,209,102,0.1),rgba(255,209,102,0.05));border:1px solid rgba(255,209,102,0.3);color:#ffd166;justify-content:center" onclick="app.showHowItWorks()">
+        <span style="font-size:1.2rem;margin-right:6px">📖</span> ¿Cómo funciona la magia?
+      </button>
 
       <!-- AdeMar Signature -->
       <div style="text-align:center;padding:10px 0 20px;font-size:0.8rem;color:#64748b;line-height:1.6">
@@ -557,6 +554,42 @@
       <div style="margin-top:24px;font-size:0.75rem;color:#64748b;letter-spacing:1px;text-transform:uppercase;">
         Powered by <strong style="color:#06d6a0;font-weight:800;font-size:0.8rem">Adelio Gonzalez</strong>
       </div>
+    </div>
+  </div>
+
+  <!-- ========== HOW IT WORKS (ONBOARDING) MODAL ========== -->
+  <div id="how-it-works-modal" class="modal-overlay hidden">
+    <div class="modal-box" style="max-width:380px;text-align:left;padding:24px 20px">
+      <h2 style="font-size:1.3rem;text-align:center;margin-bottom:8px;background:var(--accent-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent">¡Bienvenido a tu nueva Caja Fuerte! 🚀</h2>
+      <p style="text-align:center;color:#94a3b8;font-size:.85rem;margin-bottom:24px;line-height:1.5">
+        Llevar tus cuentas ahora es fácil, rápido y 100% privado.
+      </p>
+
+      <div style="display:flex;gap:12px;margin-bottom:20px;align-items:flex-start">
+        <div style="font-size:1.8rem;flex-shrink:0">🛡️</div>
+        <div>
+          <h4 style="margin-bottom:4px;color:#f1f5f9;font-size:1rem">1. Eres el único dueño</h4>
+          <p style="color:#94a3b8;font-size:.85rem;line-height:1.4">No hay bancos ni empresas espiando. Todo lo que anotas se guarda físicamente en este teléfono.</p>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-bottom:20px;align-items:flex-start">
+        <div style="font-size:1.8rem;flex-shrink:0">🤝</div>
+        <div>
+          <h4 style="margin-bottom:4px;color:#f1f5f9;font-size:1rem">2. Magia en Pareja</h4>
+          <p style="color:#94a3b8;font-size:.85rem;line-height:1.4">Toquen el botón de las flechitas (arriba a la derecha). La app conectará ambos teléfonos por el aire y mezclará sus cuentas en un segundo.</p>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-bottom:24px;align-items:flex-start">
+        <div style="font-size:1.8rem;flex-shrink:0">💾</div>
+        <div>
+          <h4 style="margin-bottom:4px;color:#f1f5f9;font-size:1rem">3. Tu Seguro de Vida</h4>
+          <p style="color:#94a3b8;font-size:.85rem;line-height:1.4">A fin de mes te invitaremos a descargar un "Respaldo". ¡Esa es tu llave para recuperar todo si cambias de celular!</p>
+        </div>
+      </div>
+
+      <button class="btn-primary" style="width:100%" onclick="app.closeHowItWorks()">¡Entendido!</button>
     </div>
   </div>
 

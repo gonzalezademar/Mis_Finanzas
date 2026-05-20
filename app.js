@@ -714,6 +714,17 @@ const app = {
   },
 
   // ============================================================
+  // HOW IT WORKS / ONBOARDING
+  // ============================================================
+  showHowItWorks() {
+    document.getElementById('how-it-works-modal').classList.remove('hidden');
+  },
+
+  closeHowItWorks() {
+    document.getElementById('how-it-works-modal').classList.add('hidden');
+  },
+
+  // ============================================================
   // UNDO (max 2 steps)
   // ============================================================
   _pushUndo(entry) {
