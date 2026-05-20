@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="MisFinanzas — Control inteligente de ingresos y egresos, 100% offline">
+  <meta name="theme-color" content="#0a0e1a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>MisFinanzas — Control Personal</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ========== HEADER ========== -->
+  <header id="app-header">
+    <button id="header-back" class="header-btn hidden" onclick="app.goBack()" aria-label="Volver">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+    </button>
+    <h1 id="header-title">MisFinanzas</h1>
+    <div class="header-actions">
+      <button id="header-action" class="header-btn" aria-label="Sincronizar" onclick="app.navigate('sync')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12A9 9 0 0 1 3 12M21 12c0-2.4-1.2-4.6-3-6M21 12l-3-3m3 3l-3 3M3 12c0 2.4 1.2 4.6 3 6M3 12l3 3M3 12l3-3"/></svg>
+      </button>
+      <button id="header-profile" class="header-profile-btn" aria-label="Mi perfil" onclick="app.navigate('settings')">
+        <span id="header-profile-initial">?</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ========== VIEWS CONTAINER ========== -->
+  <main id="views-container">
+
+    <!-- ===== DASHBOARD VIEW ===== -->
+    <section id="view-dashboard" class="view active">
+      <div class="balance-hero" id="balance-hero">
+        <div class="balance-hero-bg"></div>
+        <span class="balance-label">Balance Actual</span>
+        <span id="balance-amount" class="balance-amount">$0</span>
+        <span id="balance-month-label" class="balance-month">—</span>
+      </div>
+
+      <div class="summary-row">
+        <div class="summary-card income-card" onclick="app.navigate('statements', {filter:'income'})">
+          <div class="summary-icon-wrap income-icon-bg">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+          </div>
+          <div class="summary-text">
+            <span class="summary-label">Ingresos</span>
+            <span id="income-total" class="summary-amount income-amount">$0</span>
+          </div>
+        </div>
+        <div class="summary-card expense-card" onclick="app.navigate('statements', {filter:'expense'})">
+          <div class="summary-icon-wrap expense-icon-bg">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>
+          </div>
+          <div class="summary-text">
+            <span class="summary-label">Egresos</span>
+            <span id="expense-total" class="summary-amount expense-amount">$0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card quick-chart-card">
+        <div class="card-header">
+          <h2>Resumen del Mes</h2>
+        </div>
+        <canvas id="dashboard-chart" width="400" height="180"></canvas>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Últimos Movimientos</h2>
+          <button class="link-btn" onclick="app.navigate('statements')">Ver todos →</button>
+        </div>
+        <div id="recent-list" class="transaction-list">
+          <div class="empty-state" id="empty-recent">
+            <div class="empty-icon">📋</div>
+            <p>Aún no hay movimientos</p>
+            <span>Toca el botón + para registrar tu primer ingreso o egreso</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== ADD TRANSACTION VIEW ===== -->
+    <section id="view-add" class="view">
+      <form id="transaction-form" class="form-container" onsubmit="return app.saveTransaction(event)">
+        <div class="type-toggle">
+          <button type="button" class="type-btn active" data-type="income" onclick="app.setTransactionType('income')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+            Ingreso
+          </button>
+          <button type="button" class="type-btn" data-type="expense" onclick="app.setTransactionType('expense')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>
+            Egreso
+          </button>
+        </div>
+
+        <div class="form-group amount-group">
+          <label for="tx-amount">Monto</label>
+          <div class="amount-input-wrap">
+            <span class="currency-sign">$</span>
+            <input type="number" id="tx-amount" name="amount" placeholder="0.00" step="0.01" min="0.01" required inputmode="decimal" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="tx-description">Motivo / Destino</label>
+          <input type="text" id="tx-description" name="description" placeholder="Ej: Pago de alquiler, Salario mensual..." required autocomplete="off" maxlength="100">
+        </div>
+
+        <!-- Author: auto-filled from identity, read-only -->
+        <div class="form-group">
+          <label for="tx-author">Registrado por</label>
+          <input type="text" id="tx-author" name="author" autocomplete="off" maxlength="30" readonly>
+          <span class="field-hint">Este campo se completa automáticamente con tu identidad.</span>
+        </div>
+
+        <div class="form-group">
+          <label>Categoría</label>
+          <div id="category-grid" class="category-grid"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="tx-date">Fecha</label>
+          <input type="date" id="tx-date" name="date" required>
+        </div>
+
+        <button type="submit" id="btn-save" class="btn-primary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+          Guardar Movimiento
+        </button>
+      </form>
+    </section>
+
+    <!-- ===== STATEMENTS VIEW ===== -->
+    <section id="view-statements" class="view">
+      <div class="month-selector">
+        <button class="month-nav-btn" id="month-prev" onclick="app.changeMonth(-1)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <span id="statements-month" class="month-label">—</span>
+        <button class="month-nav-btn" id="month-next" onclick="app.changeMonth(1)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+
+      <div class="statement-summary" id="statement-summary">
+        <div class="statement-sum-item">
+          <span class="ssl">Ingresos</span>
+          <span class="ssv income-amount" id="stmt-income">$0</span>
+        </div>
+        <div class="statement-sum-divider"></div>
+        <div class="statement-sum-item">
+          <span class="ssl">Egresos</span>
+          <span class="ssv expense-amount" id="stmt-expense">$0</span>
+        </div>
+        <div class="statement-sum-divider"></div>
+        <div class="statement-sum-item">
+          <span class="ssl">Neto</span>
+          <span class="ssv" id="stmt-net">$0</span>
+        </div>
+      </div>
+
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="all" onclick="app.filterStatements('all')">Todos</button>
+        <button class="filter-tab" data-filter="income" onclick="app.filterStatements('income')">Ingresos</button>
+        <button class="filter-tab" data-filter="expense" onclick="app.filterStatements('expense')">Egresos</button>
+      </div>
+
+      <div id="statements-list" class="transaction-list">
+        <div class="empty-state" id="empty-statements">
+          <div class="empty-icon">📄</div>
+          <p>Sin movimientos este mes</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== DETAIL VIEW ===== -->
+    <section id="view-detail" class="view">
+      <div class="detail-container">
+        <div id="detail-type-badge" class="detail-badge income-badge">Ingreso</div>
+        <div id="detail-amount" class="detail-amount">$0</div>
+        <div id="detail-description" class="detail-description">Descripción</div>
+
+        <div class="detail-info-grid">
+          <div class="detail-info-item">
+            <span class="dii-label">Categoría</span>
+            <span id="detail-category" class="dii-value">—</span>
+          </div>
+          <div class="detail-info-item">
+            <span class="dii-label">Fecha</span>
+            <span id="detail-date" class="dii-value">—</span>
+          </div>
+          <div class="detail-info-item">
+            <span class="dii-label">Registrado por</span>
+            <span id="detail-author" class="dii-value">—</span>
+          </div>
+          <div class="detail-info-item">
+            <span class="dii-label">Registrado</span>
+            <span id="detail-created" class="dii-value">—</span>
+          </div>
+          <div class="detail-info-item">
+            <span class="dii-label">ID</span>
+            <span id="detail-id" class="dii-value">—</span>
+          </div>
+        </div>
+
+        <!-- Shown when current user is NOT the owner -->
+        <div id="detail-owner-notice" class="ownership-notice hidden">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span id="detail-owner-notice-text"></span>
+        </div>
+
+        <!-- Shown only when current user IS the owner -->
+        <div id="detail-actions" class="detail-actions">
+          <button class="btn-secondary" onclick="app.editTransaction()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Editar
+          </button>
+          <button class="btn-danger" onclick="app.deleteTransaction()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== REPORTS VIEW ===== -->
+    <section id="view-reports" class="view">
+      <div class="report-period-selector">
+        <label for="report-months">Periodo de reporte:</label>
+        <select id="report-months" onchange="app.updateReports()">
+          <option value="1">Mes actual</option>
+          <option value="3" selected>Últimos 3 meses</option>
+          <option value="6">Últimos 6 meses</option>
+          <option value="12">Último año</option>
+        </select>
+      </div>
+
+      <div class="report-summary" id="report-summary-cards">
+        <div class="report-sum-card">
+          <span class="rsc-label">Total Ingresos</span>
+          <span class="rsc-value income-amount" id="rpt-income">$0</span>
+        </div>
+        <div class="report-sum-card">
+          <span class="rsc-label">Total Egresos</span>
+          <span class="rsc-value expense-amount" id="rpt-expense">$0</span>
+        </div>
+        <div class="report-sum-card rsc-highlight">
+          <span class="rsc-label">Balance Neto</span>
+          <span class="rsc-value" id="rpt-net">$0</span>
+        </div>
+        <div class="report-sum-card">
+          <span class="rsc-label">Promedio Mensual</span>
+          <span class="rsc-value" id="rpt-avg">$0</span>
+        </div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="card-header"><h2>Ingresos vs Egresos</h2></div>
+        <canvas id="report-bar-chart" width="400" height="220"></canvas>
+      </div>
+
+      <div class="card chart-card">
+        <div class="card-header"><h2>Distribución por Categoría</h2></div>
+        <canvas id="report-donut-chart" width="400" height="260"></canvas>
+        <div id="donut-legend" class="donut-legend"></div>
+      </div>
+
+      <button class="btn-primary btn-print" onclick="app.printReport()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimir Resumen
+      </button>
+    </section>
+
+    <!-- ===== FORECAST VIEW ===== -->
+    <section id="view-forecast" class="view">
+      <div class="forecast-intro card">
+        <div class="forecast-intro-icon">🔮</div>
+        <h2>Pronóstico Inteligente</h2>
+        <p>Selecciona una fecha futura para proyectar tu situación financiera basada en tus tendencias.</p>
+      </div>
+
+      <div class="form-group forecast-date-group">
+        <label for="forecast-date">Fecha objetivo</label>
+        <input type="date" id="forecast-date" onchange="app.calculateForecast()">
+      </div>
+
+      <div class="forecast-shortcuts">
+        <button class="shortcut-btn" onclick="app.setForecastMonths(1)">1 Mes</button>
+        <button class="shortcut-btn" onclick="app.setForecastMonths(3)">3 Meses</button>
+        <button class="shortcut-btn" onclick="app.setForecastMonths(6)">6 Meses</button>
+        <button class="shortcut-btn" onclick="app.setForecastMonths(12)">1 Año</button>
+      </div>
+
+      <div id="forecast-results" class="forecast-results hidden">
+        <div class="forecast-current card">
+          <span class="fc-label">Balance Actual</span>
+          <span id="fc-current" class="fc-value">$0</span>
+        </div>
+
+        <div class="scenario-cards">
+          <div class="scenario-card optimistic">
+            <div class="scenario-header"><span class="scenario-emoji">🟢</span><span class="scenario-title">Optimista</span></div>
+            <span id="fc-optimistic" class="scenario-value">$0</span>
+            <span class="scenario-desc">Mejor escenario basado en tus mejores meses</span>
+          </div>
+          <div class="scenario-card realistic">
+            <div class="scenario-header"><span class="scenario-emoji">🔵</span><span class="scenario-title">Realista</span></div>
+            <span id="fc-realistic" class="scenario-value">$0</span>
+            <span class="scenario-desc">Promedio ponderado de tus tendencias</span>
+          </div>
+          <div class="scenario-card pessimistic">
+            <div class="scenario-header"><span class="scenario-emoji">🔴</span><span class="scenario-title">Pesimista</span></div>
+            <span id="fc-pessimistic" class="scenario-value">$0</span>
+            <span class="scenario-desc">Peor escenario basado en tus peores meses</span>
+          </div>
+        </div>
+
+        <div class="card forecast-breakdown">
+          <div class="card-header"><h2>Análisis de Tendencias</h2></div>
+          <div class="trend-grid">
+            <div class="trend-item"><span class="trend-label">Ingreso mensual promedio</span><span id="fc-avg-income" class="trend-value income-amount">$0</span></div>
+            <div class="trend-item"><span class="trend-label">Gasto mensual promedio</span><span id="fc-avg-expense" class="trend-value expense-amount">$0</span></div>
+            <div class="trend-item"><span class="trend-label">Flujo neto mensual</span><span id="fc-net-flow" class="trend-value">$0</span></div>
+            <div class="trend-item"><span class="trend-label">Meses analizados</span><span id="fc-months-analyzed" class="trend-value">0</span></div>
+          </div>
+        </div>
+
+        <div class="card chart-card">
+          <div class="card-header"><h2>Proyección de Balance</h2></div>
+          <canvas id="forecast-chart" width="400" height="240"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SYNC VIEW ===== -->
+    <section id="view-sync" class="view">
+      <div class="card sync-card" style="margin-top:2rem">
+        <div class="card-header"><h2>Sincronización en Vivo</h2></div>
+        <p style="padding:0 1rem;color:#94a3b8;font-size:.95rem;text-align:center">
+          Conecta ambos celulares a Internet y sigue estos pasos.
+        </p>
+
+        <div id="sync-setup" style="padding:1rem;text-align:center">
+          <button class="btn-primary" onclick="SyncManager.startHosting()">1. Crear Código de Conexión</button>
+          <div style="margin:1.5rem 0;color:#64748b">— O —</div>
+          <div class="form-group">
+            <input type="text" id="sync-code-input" placeholder="Ingresa el código de tu pareja"
+              style="text-align:center;font-size:1.2rem;letter-spacing:2px;text-transform:uppercase;margin-bottom:1rem"
+              autocomplete="off">
+          </div>
+          <button class="btn-secondary" onclick="SyncManager.connectToPeer()">2. Conectar al Código</button>
+        </div>
+
+        <div id="sync-active" class="hidden" style="padding:1rem;text-align:center">
+          <h1 id="sync-my-code" style="font-size:3rem;letter-spacing:5px;color:var(--accent);margin:1rem 0">...</h1>
+          <p style="color:#94a3b8">Dile este código a tu pareja para que se conecte.</p>
+          <div id="sync-status" style="margin-top:1.5rem;padding:1rem;border-radius:8px;background:rgba(255,255,255,0.05);font-weight:500">
+            Esperando conexión...
+          </div>
+          <button class="btn-danger" style="margin-top:1.5rem" onclick="SyncManager.reset()">Cancelar / Volver</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== TRASH VIEW ===== -->
+    <section id="view-trash" class="view">
+      <div class="trash-info-banner">
+        <span style="font-size:1.1rem;flex-shrink:0">🗑️</span>
+        <p>Los elementos se eliminan automáticamente a los <strong>60 días</strong>. Solo puedes restaurar o eliminar definitivamente los tuyos.</p>
+      </div>
+      <div class="trash-count-label"><span id="trash-count"></span></div>
+      <div id="trash-list" class="transaction-list">
+        <div class="empty-state" id="empty-trash" style="display:none">
+          <div class="empty-icon">✨</div>
+          <p>Papelera vacía</p>
+          <span>Los movimientos eliminados aparecerán aquí por 60 días antes de borrarse definitivamente.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SETTINGS VIEW ===== -->
+    <section id="view-settings" class="view">
+      <!-- Identity card -->
+      <div class="settings-identity-card card">
+        <div class="settings-avatar">
+          <span id="settings-avatar-initial">?</span>
+        </div>
+        <span class="settings-identity-label">Este dispositivo es de</span>
+        <span id="settings-name" class="settings-identity-name">—</span>
+        <button class="btn-secondary" style="margin-top:20px;max-width:220px" onclick="app._showIdentitySetup(true)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Cambiar nombre
+        </button>
+      </div>
+
+      <!-- Trash access card -->
+      <div class="card settings-trash-card" onclick="app.navigate('trash')" role="button" tabindex="0">
+        <div class="settings-trash-header">
+          <span class="settings-trash-icon">🗑️</span>
+          <div style="flex:1">
+            <div class="settings-section-title">Papelera de reciclaje</div>
+            <span id="settings-trash-count" class="settings-trash-sub">Papelera vacía</span>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#64748b;flex-shrink:0"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+        <p class="settings-trash-info">Elementos eliminados guardados por 60 días. Solo tú puedes restaurar o borrar los tuyos.</p>
+      </div>
+
+      <!-- Backup / Restore card -->
+      <div class="card" style="padding:16px 18px">
+        <div class="card-header" style="margin-bottom:12px"><h2>Copias de Seguridad (Backup)</h2></div>
+        <p style="font-size:.85rem;color:#94a3b8;line-height:1.4;margin-bottom:16px">
+          Descarga un archivo seguro con todos tus datos. Si pierdes tu teléfono, usa este archivo para restaurar todo.
+        </p>
+        <div style="display:flex;gap:10px;flex-direction:column">
+          <button class="btn-primary" onclick="app.exportBackup()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar Respaldo Seguro
+          </button>
+          <div style="position:relative">
+            <button class="btn-secondary" style="width:100%" onclick="document.getElementById('backup-file-input').click()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Restaurar desde archivo
+            </button>
+            <input type="file" id="backup-file-input" accept=".json" style="display:none" onchange="app.importBackup(event)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Info card -->
+      <div class="card" style="padding:16px 18px">
+        <div class="card-header" style="margin-bottom:8px"><h2>Sobre la sincronización</h2></div>
+        <p style="font-size:.82rem;color:#94a3b8;line-height:1.55">
+          Cuando sincronizas con otra persona, ambos dispositivos comparten todos los movimientos activos y la papelera. Los datos eliminados en cualquier dispositivo se eliminan en ambos automáticamente.
+        </p>
+      </div>
+
+      <!-- AdeMar Signature -->
+      <div style="text-align:center;padding:10px 0 20px;font-size:0.8rem;color:#64748b;line-height:1.6">
+        MisFinanzas v2.0<br>
+        <span style="letter-spacing:0.5px">Desarrollado por <strong style="color:#06d6a0;font-weight:800;font-size:0.85rem">Adelio Gonzalez</strong></span>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========== FLOATING ACTION BUTTON ========== -->
+  <button id="fab" class="fab" onclick="app.navigate('add')" aria-label="Nuevo movimiento">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+  </button>
+
+  <!-- ========== BOTTOM NAVIGATION ========== -->
+  <nav id="bottom-nav">
+    <button class="nav-item active" data-view="dashboard" onclick="app.navigate('dashboard')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Inicio</span>
+    </button>
+    <button class="nav-item" data-view="statements" onclick="app.navigate('statements')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span>Estados</span>
+    </button>
+    <div class="nav-spacer"></div>
+    <button class="nav-item" data-view="reports" onclick="app.navigate('reports')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>Reportes</span>
+    </button>
+    <button class="nav-item" data-view="forecast" onclick="app.navigate('forecast')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>Pronóstico</span>
+    </button>
+  </nav>
+
+  <!-- ========== TOAST ========== -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- ========== CONFIRM MODAL ========== -->
+  <div id="confirm-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <p id="confirm-msg">¿Estás seguro?</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="app.confirmCancel()">Cancelar</button>
+        <button class="btn-danger" id="confirm-ok" onclick="app.confirmOk()">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== CATEGORY CREATION MODAL ========== -->
+  <div id="cat-modal" class="modal-overlay hidden">
+    <div class="modal-box cat-modal-box">
+      <h3 class="cat-modal-title">Nueva Categoría</h3>
+      <div class="form-group" style="margin-bottom:14px">
+        <label for="cat-modal-name">Nombre</label>
+        <input type="text" id="cat-modal-name" placeholder="Ej: Mascotas, Gym..." maxlength="20" autocomplete="off">
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label>Elige un icono</label>
+        <div id="cat-icon-grid" class="icon-picker-grid"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="app.closeCatModal()">Cancelar</button>
+        <button class="btn-primary" style="flex:1;margin-top:0" onclick="app.saveCatModal()">Crear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== END OF MONTH BACKUP MODAL ========== -->
+  <div id="backup-prompt-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div style="font-size:2.5rem;text-align:center;margin-bottom:10px">💾</div>
+      <h3 style="text-align:center;margin-bottom:10px">¡Hoy termina el mes!</h3>
+      <p style="color:#94a3b8;font-size:0.95rem;text-align:center;margin-bottom:20px;line-height:1.5">
+        Para mantener tus datos 100% seguros, te recomendamos descargar tu archivo de respaldo ahora.
+      </p>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="app.closeBackupPrompt()">Hoy no</button>
+        <button class="btn-primary" onclick="app.doEndOfMonthBackup()">Sí, descargar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== IDENTITY SETUP MODAL (full-screen, non-dismissible on first launch) ========== -->
+  <div id="identity-modal" class="identity-modal-overlay hidden">
+    <div class="identity-modal-box">
+      <div class="identity-modal-icon">👋</div>
+      <h2 id="identity-modal-title" class="identity-modal-title">¡Bienvenido a MisFinanzas!</h2>
+      <p id="identity-modal-subtitle" class="identity-modal-subtitle">
+        ¿Cómo te llamas? Cada movimiento que registres quedará marcado con tu nombre.
+      </p>
+
+      <div class="identity-quick-options">
+        <button class="identity-quick-btn" data-name="Esposo" onclick="app._setIdentityInput('Esposo')">👨 Esposo</button>
+        <button class="identity-quick-btn" data-name="Esposa" onclick="app._setIdentityInput('Esposa')">👩 Esposa</button>
+      </div>
+
+      <div class="form-group" style="margin-top:16px">
+        <label for="identity-name-input">O escribe tu nombre:</label>
+        <input type="text" id="identity-name-input" placeholder="Tu nombre aquí..." maxlength="30" autocomplete="off"
+          onkeydown="if(event.key==='Enter') app.saveIdentity()">
+      </div>
+
+      <button class="btn-primary" style="margin-top:8px" onclick="app.saveIdentity()">
+        Confirmar y continuar
+      </button>
+      <button id="identity-modal-cancel" class="hidden" style="width:100%;padding:12px;margin-top:10px;background:none;border:none;color:#64748b;cursor:pointer;font-size:.9rem" onclick="app.cancelIdentitySetup()">
+        Cancelar
+      </button>
+
+      <!-- AdeMar Watermark -->
+      <div style="margin-top:24px;font-size:0.75rem;color:#64748b;letter-spacing:1px;text-transform:uppercase;">
+        Powered by <strong style="color:#06d6a0;font-weight:800;font-size:0.8rem">Adelio Gonzalez</strong>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== PRINT TEMPLATE ========== -->
+<div id="print-area" class="print-area">
+  <div id="print-content"></div>
+</div>
+
+<script src="db.js"></script>
+<script src="charts.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

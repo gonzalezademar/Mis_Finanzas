@@ -1,0 +1,50 @@
+name: Construir APK de MisFinanzas
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 1. Clonar el código
+      uses: actions/checkout@v4
+
+    - name: 2. Preparar entorno Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: 3. Instalar Motor (Capacitor)
+      run: npm install
+
+    - name: 4. Preparar archivos de la App
+      run: |
+        mkdir -p www
+        cp index.html app.js db.js charts.js styles.css sw.js manifest.json icon-*.png www/
+
+    - name: 5. Crear proyecto Android
+      run: |
+        npx cap add android
+        npx cap sync android
+
+    - name: 6. Configurar entorno Java/Android
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: 7. Construir archivo .APK
+      run: |
+        cd android
+        chmod +x gradlew
+        ./gradlew assembleDebug
+
+    - name: 8. Entregar el .APK listo
+      uses: actions/upload-artifact@v4
+      with:
+        name: MisFinanzas-AdeMar-APK
+        path: android/app/build/outputs/apk/debug/app-debug.apk

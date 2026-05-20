@@ -1,0 +1,6 @@
+{
+  "appId": "com.ademar.misfinanzas",
+  "appName": "MisFinanzas",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}

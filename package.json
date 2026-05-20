@@ -1,0 +1,14 @@
+{
+  "name": "misfinanzas",
+  "version": "2.0.0",
+  "description": "Aplicación P2P de Finanzas",
+  "author": "Adelio Gonzalez",
+  "scripts": {
+    "build": "echo 'No build required for Vanilla JS'"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0"
+  }
+}
